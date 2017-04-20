@@ -14,7 +14,7 @@
   position: relative;
   height: @barDimension;
   width: 100%;
-  margin: 35px 0 15px 0;
+  margin: 45px 0 15px 0;
   vertical-align: middle;
   user-select: none;
 
@@ -90,6 +90,9 @@
     top: -@handleSize/2 + @barDimension/2;
     background-color: @handleBgColor;
     z-index: 3;
+
+    //transition: all 100ms ease;
+
     .rounded(@handleSize/2);
     //  -webkit-transition:all linear 0.15s;
     //  -moz-transition:all linear 0.15s;
@@ -119,11 +122,24 @@
 
   .rz-bubble {
     cursor: default;
-    bottom: @handleSize/2;
+    bottom: @handleSize/2 + 10;
     padding: @bubblePadding;
     color: @labelTextColor;
+
+    //transition: all 100ms ease;
+    
+    font-weight: bold;
+
     &.rz-limit {
       color: @limitLabelTextColor;
+    }
+
+    &.rz-default-label {
+      padding: 3px 7px 3px 7px;
+      border-radius: 30px;
+      background: #00CEFF;
+      color: #FFFFFF;
+      font-weight: normal;
     }
   }
 
