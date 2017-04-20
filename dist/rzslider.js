@@ -1,7 +1,7 @@
 /*! angularjs-slider - v6.1.1 - 
  (c) Rafal Zajac <rzajac@gmail.com>, Valentin Hervieu <valentin@hervieu.me>, Jussi Saarivirta <jusasi@gmail.com>, Angelin Sirbu <angelin.sirbu@gmail.com> - 
  https://github.com/angular-slider/angularjs-slider - 
- 2017-03-29 */
+ 2017-04-19 */
 /*jslint unparam: true */
 /*global angular: false, console: false, define, module */
 (function(root, factory) {
@@ -29,7 +29,7 @@
   'use strict';
   var module = angular.module('rzModule', [])
 
-  .factory('RzSliderOptions', function() {
+  .factory('RzSliderOptions', [function() {
     var defaultOptions = {
       floor: 0,
       ceil: null, //defaults to rz-slider-model
@@ -85,7 +85,9 @@
       ariaLabel: null,
       ariaLabelledBy: null,
       ariaLabelHigh: null,
-      ariaLabelledByHigh: null
+      ariaLabelledByHigh: null,
+      defaultLabel: 'Please select a rating',
+      showDefaultIf: (NaN || null || undefined || false)
     };
     var globalOptions = {};
 
@@ -108,7 +110,7 @@
     };
 
     return factory;
-  })
+  }])
 
   .factory('rzThrottle', ['$timeout', function($timeout) {
     /**
@@ -825,9 +827,19 @@
           valStr = String(value)
         }
 
-        if (label.rzsv === undefined || label.rzsv.length !== valStr.length || (label.rzsv.length > 0 && label.rzsd === 0)) {
+        if (label.rzsv === undefined || label.rzsv === null || label.rzsv.length !== valStr.length || (label.rzsv.length > 0 && label.rzsd === 0)) {
           getDimension = true;
           label.rzsv = valStr;
+
+          //console.log('Label value: ', label.rzsv, this.lowLimit);
+
+          /*if(isNaN(label.rzsv) || parseInt(label.rzsv) < parseInt(this.lowValue)) {
+           label.rzsv = this.options.defaultLabel;
+          }*/
+
+          if(isNaN(label.rzsv) || label.rzsv === null || parseInt(label.rzsv) < parseInt(this.lowValue)) {
+           label.rzsv = this.options.defaultLabel;
+          }
         }
 
         if (!noLabelInjection) {
@@ -947,7 +959,7 @@
       calcViewDimensions: function() {
         var handleWidth = this.getDimension(this.minH);
 
-        this.handleHalfDim = handleWidth / 2;
+        this.handleHalfDim = (handleWidth / 2);
         this.barDimension = this.getDimension(this.fullBar);
 
         this.maxPos = this.barDimension - handleWidth;
@@ -1128,9 +1140,29 @@
        * @returns {undefined}
        */
       updateLowHandle: function(newPos) {
+
+        // UPDATELOWHANDLE
+        this.minLab.removeClass('rz-default-label');
+        this.minH.removeClass('rz-default-color');
         this.setPosition(this.minH, newPos);
         this.translateFn(this.lowValue, this.minLab, 'model');
         this.setPosition(this.minLab, this.getHandleLabelPos('minLab', newPos));
+
+        //console.log(this.minH, newPos, this.lowValue, this.minLab, this.getHandleLabelPos('minLab', newPos));
+
+        if(isNaN(this.lowValue) || this.lowValue === null) {
+          this.minLab.text(this.options.defaultLabel);
+
+          var width = angular.element(this.minLab)[0].clientWidth;
+
+          var defaultPosition = Math.floor((this.minValue + this.maxValue) / 2);
+
+          this.setPosition(this.minH, this.valueToPosition(defaultPosition));
+          this.setPosition(this.minLab, this.valueToPosition(defaultPosition) - (width/2) + 18);
+
+          this.minLab.addClass('rz-default-label');
+          this.minH.addClass('rz-default-color');
+        }
 
         if (this.options.getPointerColor) {
           var pointercolor = this.getPointerColor('min');
@@ -1407,7 +1439,27 @@
           steppedDifference = parseFloat((value - this.minValue) / step).toPrecision(12);
         steppedDifference = Math.round(+steppedDifference) * step;
         var newValue = (this.minValue + steppedDifference).toFixed(this.precision);
-        return +newValue;
+        
+        //console.log('Original value', value);
+        //console.log('Rounded value? ', newValue);
+
+        if(value === 'na') {
+          //console.log('Returning value', value);
+          return value;
+        }else if(isNaN(value) || value === null || value === undefined) {
+          //console.log('Returning null');
+          return null;
+        }else{
+
+          //console.log('Returning new value');
+          return +newValue;
+        }
+
+        /*if(isNaN(newValue)) {
+          return value;
+        }else{
+          return +newValue;
+        }*/
       },
 
       /**
@@ -2001,6 +2053,7 @@
             }
           }
         }
+
         return this.roundStep(value);
       },
 
@@ -2286,7 +2339,8 @@
         rzSliderModel: '=?',
         rzSliderHigh: '=?',
         rzSliderOptions: '&?',
-        rzSliderTplUrl: '@'
+        rzSliderTplUrl: '@',
+        rzSliderEnd: '&rzSliderEnd'
       },
 
       /**
@@ -2302,7 +2356,13 @@
       },
 
       link: function(scope, elem) {
+
+        //scope.rzSliderOptions.onEnd = scope.rzSliderEnd;
+
         scope.slider = new RzSlider(scope, elem); //attach on scope so we can test it
+        scope.slider.options.onEnd = scope.rzSliderEnd;
+
+        //console.error('Slider scope: ', scope);
       }
     };
   }]);
